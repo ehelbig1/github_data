@@ -12,20 +12,24 @@ pub trait Datasource {
         organization: &str,
         repository: &str,
     ) -> Result<model::release::Release, error::Error>;
+
+    async fn list_org_repositories(&self, organization: &str) -> Result<Vec<model::repo::Repo>, error::Error>;
 }
 
 pub struct GithubDatasource<'a> {
     http_client: &'a reqwest::Client,
     base_url: url::Url,
+    personal_access_token: Option<&'a str>
 }
 
 impl<'a> GithubDatasource<'a> {
-    pub fn new(http_client: &'a reqwest::Client) -> Self {
+    pub fn new(http_client: &'a reqwest::Client, personal_access_token: Option<&'a str>) -> Self {
         let base_url = url::Url::parse("https://api.github.com").unwrap();
 
         Self {
             http_client,
             base_url,
+            personal_access_token
         }
     }
 }
@@ -52,6 +56,38 @@ impl<'a> Datasource for GithubDatasource<'a> {
 
         let data = match response {
             Ok(response) => response.json::<model::release::Release>().await,
+            Err(_) => return Err(error::Error::RequestError),
+        };
+
+        match data {
+            Ok(data) => Ok(data),
+            Err(_) => Err(error::Error::ParseError),
+        }
+    }
+
+    async fn list_org_repositories(&self, organization: &str) -> Result<Vec<model::repo::Repo>, error::Error> {
+        let url = format!("{}orgs/{}/repos", self.base_url.as_str(), organization);
+        let mut request = self
+            .http_client
+            .get(url)
+            .header("User-Agent", "github_data")
+            .header("X-GitHub-Api-Version", "2022-11-28")
+            .header("Accept", "application/vnd.github+json")
+            .query(&[("type", "all"), ("per_page", "100"), ("page", "1")]);
+
+        request = if let Some(personal_access_token) = self.personal_access_token {
+            request
+                .header("Authorization", personal_access_token)
+        } else {
+            request
+        };
+
+        let response = request
+            .send()
+            .await;
+
+        let data = match response {
+            Ok(response) => response.json::<Vec<model::repo::Repo>>().await,
             Err(_) => return Err(error::Error::RequestError),
         };
 

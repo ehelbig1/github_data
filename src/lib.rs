@@ -13,7 +13,7 @@ pub trait Datasource {
         repository: &str,
     ) -> Result<model::list_release::Release, error::Error>;
 
-    async fn list_org_repositories(&self, properties: &model::list_repositories::Properties) -> Result<model::list_repositories::Response, error::Error>;
+    async fn list_org_repositories(&self, properties: model::list_repositories::Properties) -> Result<model::list_repositories::Response, error::Error>;
 }
 
 pub struct GithubDatasource<'a> {
@@ -65,7 +65,7 @@ impl<'a> Datasource for GithubDatasource<'a> {
         }
     }
 
-    async fn list_org_repositories(&self, properties: &model::list_repositories::Properties) -> Result<model::list_repositories::Response, error::Error> {
+    async fn list_org_repositories(&self, properties: model::list_repositories::Properties) -> Result<model::list_repositories::Response, error::Error> {
         let url = format!("{}orgs/{}/repos", self.base_url.as_str(), properties.organization);
         let mut request = self
             .http_client

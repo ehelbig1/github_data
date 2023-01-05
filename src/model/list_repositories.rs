@@ -134,14 +134,15 @@ pub struct SecretScanningPushProtection {
     pub status: String,
 }
 
-pub struct Properties<'a> {
-    pub organization: &'a str,
+#[derive(Debug, PartialEq, Clone)]
+pub struct Properties {
+    pub organization: String,
     pub per_page: u32,
     pub page: u32
 }
 
-impl<'a> Properties<'a> {
-    pub fn new(organization: &'a str, per_page: u32, page: u32) -> Self {
+impl Properties {
+    pub fn new(organization: String, per_page: u32, page: u32) -> Self {
         Self {
             organization,
             per_page,
@@ -149,7 +150,7 @@ impl<'a> Properties<'a> {
         }
     }
 
-    pub fn default(organization: &'a str) -> Self {
+    pub fn default(organization: String) -> Self {
         Self {
             organization,
             per_page: 30,

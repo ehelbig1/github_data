@@ -1,2 +1,2 @@
-pub mod release;
-pub mod repo;
+pub mod list_release;
+pub mod list_repositories;

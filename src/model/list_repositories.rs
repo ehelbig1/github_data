@@ -2,8 +2,10 @@ use chrono::{self, prelude::*};
 use serde::Deserialize;
 use url;
 
+pub type Response = Vec<Repository>;
+
 #[derive(Debug, PartialEq, Deserialize)]
-pub struct Repo {
+pub struct Repository {
     pub id: u32,
     pub node_id: String,
     pub name: String,
@@ -112,7 +114,7 @@ pub struct Permissions {
 
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct SecurityAndAnalysis {
-    pub advanced_security: AdvancedSecurity,
+    pub advanced_security: Option<AdvancedSecurity>,
     pub secret_scanning: SecretScanning,
     pub secret_scanning_push_protection: SecretScanningPushProtection,
 }
@@ -130,4 +132,28 @@ pub struct SecretScanning {
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct SecretScanningPushProtection {
     pub status: String,
+}
+
+pub struct Properties<'a> {
+    pub organization: &'a str,
+    pub per_page: u32,
+    pub page: u32
+}
+
+impl<'a> Properties<'a> {
+    pub fn new(organization: &'a str, per_page: u32, page: u32) -> Self {
+        Self {
+            organization,
+            per_page,
+            page
+        }
+    }
+
+    pub fn default(organization: &'a str) -> Self {
+        Self {
+            organization,
+            per_page: 30,
+            page: 1
+        }
+    }
 }

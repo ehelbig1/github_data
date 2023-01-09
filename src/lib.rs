@@ -19,11 +19,11 @@ pub trait Datasource {
 pub struct GithubDatasource<'a> {
     http_client: &'a reqwest::Client,
     base_url: url::Url,
-    personal_access_token: Option<&'a str>
+    personal_access_token: Option<String>
 }
 
 impl<'a> GithubDatasource<'a> {
-    pub fn new(http_client: &'a reqwest::Client, personal_access_token: Option<&'a str>) -> Self {
+    pub fn new(http_client: &'a reqwest::Client, personal_access_token: Option<String>) -> Self {
         let base_url = url::Url::parse("https://api.github.com").unwrap();
 
         Self {
@@ -75,7 +75,7 @@ impl<'a> Datasource for GithubDatasource<'a> {
             .header("Accept", "application/vnd.github+json")
             .query(&[("type", "all"), ("per_page", "100"), ("page", &properties.page.to_string())]);
 
-        request = if let Some(personal_access_token) = self.personal_access_token {
+        request = if let Some(personal_access_token) = &self.personal_access_token {
             request
                 .header("Authorization", format!("Bearer {}", personal_access_token))
         } else {

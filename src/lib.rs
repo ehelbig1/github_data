@@ -14,6 +14,7 @@ pub trait Datasource {
     ) -> Result<model::list_release::Release, error::Error>;
 
     async fn list_org_repositories(&self, properties: model::list_repositories::Properties) -> Result<model::list_repositories::Response, error::Error>;
+    async fn upload_sarif_file(&self, properties: model::upload_sarif_file::Properties) -> Result<model::upload_sarif_file::Response, error::Error>;
 }
 
 pub struct GithubDatasource<'a> {
@@ -88,6 +89,38 @@ impl<'a> Datasource for GithubDatasource<'a> {
 
         let data = match response {
             Ok(response) => response.json::<model::list_repositories::Response>().await,
+            Err(_) => return Err(error::Error::RequestError),
+        };
+
+        match data {
+            Ok(data) => Ok(data),
+            Err(_) => Err(error::Error::ParseError),
+        }
+    }
+
+    async fn upload_sarif_file(&self, properties: model::upload_sarif_file::Properties) -> Result<model::upload_sarif_file::Response, error::Error> {
+        let url = format!("{}repos/{}/{}/code-scanning/sarifs", self.base_url, properties.owner, properties.repo);
+        let mut request = self
+            .http_client
+            .post(url)
+            .header("User-Agent", "github_data")
+            .header("X-Github-Api-Version", "2022-11-28")
+            .header("Accept", "application/vnd.github+json")
+            .body(format!("{{\"commit_sha\":\"{}\",\"ref\":\"{}\",\"sarif\":\"{}\"}}", properties.commit_sha, properties.r#ref, properties.sarif));
+
+        request = if let Some(personal_access_token) = &self.personal_access_token {
+            request
+                .header("Authorization", format!("Bearer {}", personal_access_token))
+        } else {
+            request
+        };
+
+        let response = request
+            .send()
+            .await;
+
+        let data = match response {
+            Ok(response) => response.json::<model::upload_sarif_file::Response>().await,
             Err(_) => return Err(error::Error::RequestError),
         };
 
